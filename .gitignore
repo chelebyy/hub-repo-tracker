@@ -55,27 +55,17 @@ Thumbs.db
 
 # --- USER SPECIAL RULES ---
 
-# --- USER SPECIAL RULES ---
+# Documentation
+# Allow specific documentation but ignore large generated docs if any
+# *.md  <-- Removed this aggressive rule
 
-# --- USER SPECIAL RULES ---
-
-# Ignore ALL markdown files
-*.md
-# Ignore docs folder
-docs/
-
-# Explicit exception for the main README
-!README.md
-
-# Disable all test related files and directories
-tests/
+# Tests & Quality
+# Allow tracking of source tests but ignore coverage and temporary test files
 testsprite_tests/
 testsprite_tests/tmp/
-*.test.*
-*.spec.*
-vitest.config.ts
-__tests__/
 coverage/
+.nyc_output/
+.vitest-results/
 
 # Analysis & Tools
 sonar-project.properties
