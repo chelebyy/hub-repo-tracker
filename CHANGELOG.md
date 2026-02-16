@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.6] - 2026-02-17
+
+### Added
+
+- **Repository Cleanup**: Internal AI folders (`.maestro`, `.claude`, `.gemini`) are now properly excluded and removed from tracking.
+- **Log Management**: Standardized log paths and added them to `.gitignore`.
+- **Branding**: Official high-quality showcase image added to README.
+
 ## [1.0.5] - 2026-02-16
 
 ### Added
