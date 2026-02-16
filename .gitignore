@@ -1,8 +1,8 @@
 # Dependencies
-node_modules/
+# node_modules/ <-- This will be moved
 
 # Build output
-dist/
+# dist/ <-- This will be moved
 build/
 *.exe
 *.dll
