@@ -10,7 +10,7 @@
 
 ---
 
-![Dashboard Preview](./docs/images/showcase.webp)
+![Dashboard Preview](./docs/images/showcase.png)
 *A professional dashboard to centralize and track your GitHub ecosystem.*
 
 ---
