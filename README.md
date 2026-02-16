@@ -10,8 +10,8 @@
 
 ---
 
-![Dashboard Preview](./docs/images/showcase.png)
-*Note: Replace this with an actual screenshot of your dashboard for maximum impact.*
+![Dashboard Preview](./docs/images/showcase.webp)
+*A professional dashboard to centralize and track your GitHub ecosystem.*
 
 ---
 
