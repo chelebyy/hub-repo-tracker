@@ -1,13 +1,9 @@
 import Database, { type Database as DatabaseType } from 'better-sqlite3';
 import { config } from '../config/index.js';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { dirname } from 'node:path';
 import { mkdirSync } from 'node:fs';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const dbPath = config.nodeEnv === 'development'
-  ? join(__dirname, '../../../data/repos.db')
-  : config.database.path;
+const dbPath = config.database.path;
 
 // Ensure data directory exists
 const dataDir = dirname(dbPath);
@@ -112,6 +108,12 @@ export function initializeDatabase(): void {
       last_sync_at TEXT,
       has_updates INTEGER DEFAULT 0,
       FOREIGN KEY (repo_id) REFERENCES repos(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL,
+      updated_at TEXT DEFAULT (datetime('now'))
     );
 
     CREATE TABLE IF NOT EXISTS version_history (

@@ -1,6 +1,35 @@
 import { Octokit } from 'octokit';
 import { config } from '../../shared/config/index.js';
 import { logger } from '../../shared/logger.js';
+import { db } from '../../shared/db/index.js';
+
+let _octokit: Octokit | null = null;
+
+// Helper to get or create octokit with latest token
+function getOctokit(): Octokit {
+  // Priority 1: Environment Variable
+  let token = config.github.token;
+
+  // Priority 2: Database Settings
+  if (!token) {
+    try {
+      const row = db.prepare('SELECT value FROM settings WHERE key = ?').get('github_token') as { value: string } | undefined;
+      if (row?.value) {
+        token = row.value;
+      }
+    } catch (error) {
+      logger.error({ error }, 'Failed to load token from database');
+    }
+  }
+
+  // If token changed or not yet initialized, recreate Octokit
+  if (!_octokit || token !== (_octokit as any)._lastToken) {
+    _octokit = new Octokit({ auth: token });
+    (_octokit as any)._lastToken = token;
+  }
+
+  return _octokit;
+}
 
 export interface CommitInfo {
   sha: string;
@@ -25,11 +54,6 @@ export interface RepoGitHubData {
   releases: ReleaseInfo | null;
   tags: TagInfo | null;
 }
-
-// Create Octokit instance with auth
-const octokit = new Octokit({
-  auth: config.github.token,
-});
 
 // Rate limit tracking
 let rateLimitRemaining = 5000;
@@ -82,7 +106,7 @@ export const githubClient = {
         headers['If-None-Match'] = etag;
       }
 
-      const response = await octokit.rest.repos.listCommits({
+      const response = await getOctokit().rest.repos.listCommits({
         owner,
         repo,
         per_page: 1,
@@ -91,8 +115,8 @@ export const githubClient = {
 
       // Update rate limit tracking
       if (response.headers) {
-        rateLimitRemaining = parseInt(response.headers['x-ratelimit-remaining'] || '5000', 10);
-        rateLimitReset = parseInt(response.headers['x-ratelimit-reset'] || '0', 10);
+        rateLimitRemaining = Number.parseInt(response.headers['x-ratelimit-remaining'] || '5000', 10);
+        rateLimitReset = Number.parseInt(response.headers['x-ratelimit-reset'] || '0', 10);
 
         // Warn if rate limit is low (< 100)
         if (rateLimitRemaining < 100) {
@@ -125,7 +149,7 @@ export const githubClient = {
       }
 
       try {
-        const response = await octokit.rest.repos.getLatestRelease({
+        const response = await getOctokit().rest.repos.getLatestRelease({
           owner,
           repo,
           headers,
@@ -133,8 +157,8 @@ export const githubClient = {
 
         // Update rate limit tracking
         if (response.headers) {
-          rateLimitRemaining = parseInt(response.headers['x-ratelimit-remaining'] || '5000', 10);
-          rateLimitReset = parseInt(response.headers['x-ratelimit-reset'] || '0', 10);
+          rateLimitRemaining = Number.parseInt(response.headers['x-ratelimit-remaining'] || '5000', 10);
+          rateLimitReset = Number.parseInt(response.headers['x-ratelimit-reset'] || '0', 10);
 
           if (rateLimitRemaining < 100) {
             logger.warn({ remaining: rateLimitRemaining, resetAt: new Date(rateLimitReset * 1000) }, 'GitHub API rate limit low');
@@ -163,7 +187,7 @@ export const githubClient = {
   async getLatestTag(owner: string, repo: string): Promise<{ data: TagInfo | null; etag?: string }> {
     return withBackoff(async () => {
       try {
-        const response = await octokit.rest.repos.listTags({
+        const response = await getOctokit().rest.repos.listTags({
           owner,
           repo,
           per_page: 1,

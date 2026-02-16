@@ -9,17 +9,21 @@ import { compareVersions, hasUpdateAvailable } from '../../shared/utils/semver.j
 const octokit = new Octokit({ auth: config.github.token });
 
 // Parse GitHub URL to extract owner and name
+// Supports: https://github.com/owner/repo, owner/repo, www.github.com/owner/repo
 function parseGitHubUrl(url: string): { owner: string; name: string; full_name: string } {
-  const match = url.match(/github\.com\/([\w-]+)\/([\w.-]+)/);
+  const match = url.match(/^(?:https?:\/\/)?(?:www\.)?github\.com\/([\w-]+)\/([\w.-]+)|^([\w-]+)\/([\w.-]+)$/);
   if (!match) {
-    throw createError(400, 'INVALID_URL', 'Invalid GitHub repository URL');
+    throw createError(400, 'INVALID_URL', 'Invalid GitHub repository URL. Use format: owner/repo or https://github.com/owner/repo');
   }
 
-  const [, owner, name] = match;
+  // Full URL format (groups 1, 2) or short format (groups 3, 4)
+  const owner = match[1] || match[3];
+  const name = (match[2] || match[4]).replace(/\.git$/, '');
+
   return {
     owner,
-    name: name.replace(/\.git$/, ''),
-    full_name: `${owner}/${name.replace(/\.git$/, '')}`,
+    name,
+    full_name: `${owner}/${name}`,
   };
 }
 

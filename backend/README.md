@@ -36,23 +36,19 @@
 
 ---
 
-## ⚡ Quick Start (No Setup Required)
+## ⚡ Quick Start (NPM)
 
-The fastest way to get started is using `npx`. No cloning, `.env` files, or manual installation required.
+The fastest way to get started is using `npx`. No cloning or installation required.
 
 ```bash
 npx hub-repo-tracker
 ```
 
-1. **Launch**: Run the command above.
-2. **Configure**: Click the **Gear (Settings)** icon in the dashboard.
-3. **Connect**: Paste your [GitHub Token](https://github.com/settings/tokens) in the **General** tab and click **Save**.
-
-That's it! Your token is stored securely in your local database.
+This will automatically launch the dashboard in your default browser.
 
 ### Global Installation
 
-If you want the command available permanently without `npx`:
+If you prefer to have the command available globally:
 
 ```bash
 npm install -g hub-repo-tracker
@@ -93,27 +89,6 @@ npm run install:all
 # Start both servers concurrently
 npm run dev
 ```
-
----
-
-## 🗑️ Uninstallation & Data Management
-
-Hub Repo Tracker keeps your data separate from the application logic to ensure you don't lose your notes during updates.
-
-### Global Uninstall
-
-If you installed the package globally:
-
-```bash
-npm uninstall -g hub-repo-tracker
-```
-
-### Cleaning Data
-
-The application stores its database and settings in a `data/` folder within the directory where it was launched. To completely remove all traces:
-
-1. Uninstall the package (as shown above).
-2. Manually delete the `data/` folder in your workspace.
 
 ---
 

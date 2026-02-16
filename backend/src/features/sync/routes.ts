@@ -19,7 +19,6 @@ export async function syncRoutes(app: FastifyInstance): Promise<void> {
 
     // Run sync in background
     const syncPromise = syncService.syncAll();
-    let jobId: string | undefined;
 
     // Get jobId from the initial sync state
     syncPromise.then(() => {}).catch(error => {
@@ -29,7 +28,7 @@ export async function syncRoutes(app: FastifyInstance): Promise<void> {
     // Small delay to ensure jobId is set
     await new Promise(resolve => setTimeout(resolve, 10));
     const progress = syncService.getProgress();
-    jobId = progress?.jobId;
+    const jobId = progress?.jobId;
 
     reply.code(202);
     return {

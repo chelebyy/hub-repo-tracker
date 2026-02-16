@@ -40,36 +40,9 @@ export async function repoRoutes(app: FastifyInstance): Promise<void> {
   // POST /api/repos/preview - Preview repo from GitHub URL
   app.post('/api/repos/preview', {
     schema: {
-      body: {
-        type: 'object',
-        properties: {
-          url: {
-            type: 'string',
-            pattern: '^https://github\\.com/[\\w-]+/[\\w.-]+$',
-          },
-        },
-        required: ['url'],
-      },
+      body: repoSchemas.previewRepo,
       response: {
-        200: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean' },
-            data: {
-              type: 'object',
-              properties: {
-                owner: { type: 'string' },
-                name: { type: 'string' },
-                full_name: { type: 'string' },
-                description: { type: ['string', 'null'] },
-                stars: { type: 'integer' },
-                avatar_url: { type: 'string' },
-                suggested_version: { type: ['string', 'null'] },
-                version_source: { type: ['string', 'null'], enum: ['release', 'tag', null] },
-              },
-            },
-          },
-        },
+        200: repoSchemas.previewResponse,
       },
     },
   }, async (request) => {
