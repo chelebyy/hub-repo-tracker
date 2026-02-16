@@ -1,0 +1,1 @@
+export { VersionDiffBadge } from './VersionDiffBadge'
