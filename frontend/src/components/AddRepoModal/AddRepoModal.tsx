@@ -111,7 +111,7 @@ export function AddRepoModal({ isOpen, onClose, onSubmit, categories }: Props) {
       return
     }
 
-    const isValidUrl = /^https:\/\/github\.com\/[\w-]+\/[\w.-]+\/?$/.test(trimmedUrl)
+    const isValidUrl = /^(?:https?:\/\/)?(?:www\.)?github\.com\/[\w-]+\/[\w.-]+\/?$|^[\w-]+\/[\w.-]+$/.test(trimmedUrl)
 
     if (isValidUrl) {
       setPreviewing(true)
@@ -135,7 +135,7 @@ export function AddRepoModal({ isOpen, onClose, onSubmit, categories }: Props) {
       // Invalid URL format - show validation error
       setPreview(null)
       setPreviewing(false)
-      setError('Invalid URL format. Use: https://github.com/owner/repo')
+      setError('Invalid format. Use: owner/repo or https://github.com/owner/repo')
     }
 
     return () => {
@@ -184,10 +184,10 @@ export function AddRepoModal({ isOpen, onClose, onSubmit, categories }: Props) {
               <Input
                 id="url"
                 ref={inputRef}
-                type="url"
+                type="text"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://github.com/owner/repo"
+                placeholder="owner/repo or https://github.com/owner/repo"
                 className="pr-10"
                 disabled={submitting}
               />

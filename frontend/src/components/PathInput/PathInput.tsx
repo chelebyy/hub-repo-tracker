@@ -91,7 +91,7 @@ export function PathInput({
     }
 
     try {
-      const handle = await (globalThis as any).showDirectoryPicker()
+      const handle = await showDirectoryPicker()
       if (value.trim()) {
         onChange(value.trim() + '/' + handle.name)
       } else {

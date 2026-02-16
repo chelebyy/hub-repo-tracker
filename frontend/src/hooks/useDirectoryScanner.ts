@@ -11,31 +11,6 @@ interface ScanStatus {
     error: string | null;
 }
 
-// Browser native File System Access API types
-interface FileSystemHandle {
-    kind: 'file' | 'directory';
-    name: string;
-}
-
-interface FileSystemDirectoryHandle extends FileSystemHandle {
-    values(): AsyncIterableIterator<FileSystemHandle>;
-    entries(): AsyncIterableIterator<[string, FileSystemHandle]>;
-    keys(): AsyncIterableIterator<string>;
-    getDirectoryHandle(name: string, options?: { create?: boolean }): Promise<FileSystemDirectoryHandle>;
-    getFileHandle(name: string, options?: { create?: boolean }): Promise<FileSystemFileHandle>;
-}
-
-interface FileSystemFileHandle extends FileSystemHandle {
-    getFile(): Promise<File>;
-}
-
-// Global window extension
-declare global {
-    interface Window {
-        showDirectoryPicker(): Promise<FileSystemDirectoryHandle>;
-    }
-}
-
 const PROJECT_TYPE_INDICATORS: Record<string, string> = {
     'package.json': 'node',
     'pnpm-lock.yaml': 'node',
@@ -106,7 +81,7 @@ async function getManifestInfo(
 async function detectProjectType(handle: FileSystemDirectoryHandle): Promise<ScannedProject['projectType']> {
     for await (const [name, entry] of handle.entries()) {
         if (entry.kind === 'file' && PROJECT_TYPE_INDICATORS[name]) {
-            return PROJECT_TYPE_INDICATORS[name] as any;
+            return PROJECT_TYPE_INDICATORS[name] as ScannedProject['projectType'];
         }
     }
     return 'unknown';
@@ -131,8 +106,7 @@ export function useDirectoryScanner() {
         }
 
         try {
-            // Cast globalThis to any to access showDirectoryPicker if TS complains, or use the Window interface
-            const dirHandle = await (globalThis as any).showDirectoryPicker();
+            const dirHandle = await showDirectoryPicker();
 
             setStatus({
                 scanning: true,

@@ -15,12 +15,22 @@ build/
 .env.*.local
 .env.example.local
 
+# Secrets & Credentials
+*.pem
+*.key
+*.crt
+credentials.json
+service-account.json
+.secrets/
+.secrets.*
+
 # Data directory
 data/
 *.db
 *.sqlite
 
 # Logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -45,19 +55,17 @@ Thumbs.db
 
 # --- USER SPECIAL RULES ---
 
-# Disable all markdown files EXCEPT README.md
-*.md
-!README.md
+# Documentation
+# Allow specific documentation but ignore large generated docs if any
+# *.md  <-- Removed this aggressive rule
 
-# Disable all test related files and directories
-tests/
+# Tests & Quality
+# Allow tracking of source tests but ignore coverage and temporary test files
 testsprite_tests/
 testsprite_tests/tmp/
-*.test.*
-*.spec.*
-vitest.config.ts
-__tests__/
 coverage/
+.nyc_output/
+.vitest-results/
 
 # Analysis & Tools
 sonar-project.properties
@@ -67,10 +75,3 @@ hotspots.json
 standard_prd.json
 *.jsonl
 tmp/
-
-# Disable system specific files
-CLAUDE.md
-GEMINI.md
-SKILLS-KILAVUZU.md
-future_roadmap.md
-VERSION_TRACKING_PLAN.md

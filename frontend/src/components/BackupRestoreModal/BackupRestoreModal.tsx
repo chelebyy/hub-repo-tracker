@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Settings, Download, Upload } from 'lucide-react'
+import { Settings, Download, Upload, Cpu } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dialog'
 import { BackupSection } from './BackupSection'
 import { RestoreSection } from './RestoreSection'
+import { GeneralSettings } from './GeneralSettings'
 import { useToast } from '@/hooks/use-toast'
 
 interface Props {
@@ -17,10 +18,10 @@ interface Props {
   onRestoreComplete: () => void
 }
 
-type Tab = 'backup' | 'restore'
+type Tab = 'general' | 'backup' | 'restore'
 
 export function BackupRestoreModal({ isOpen, onClose, onRestoreComplete }: Props) {
-  const [activeTab, setActiveTab] = useState<Tab>('backup')
+  const [activeTab, setActiveTab] = useState<Tab>('general')
   const { toast } = useToast()
 
   const handleSuccess = (message: string) => {
@@ -44,7 +45,7 @@ export function BackupRestoreModal({ isOpen, onClose, onRestoreComplete }: Props
   }
 
   const handleClose = () => {
-    setActiveTab('backup') // Reset to backup tab on close
+    setActiveTab('general') // Reset to general tab on close
     onClose()
   }
 
@@ -54,32 +55,40 @@ export function BackupRestoreModal({ isOpen, onClose, onRestoreComplete }: Props
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Settings className="w-5 h-5" />
-            Backup & Restore
+            System Settings
           </DialogTitle>
           <DialogDescription>
-            Back up your data or restore from a previous backup.
+            Configure your GitHub integration and manage your data.
           </DialogDescription>
         </DialogHeader>
 
         {/* Custom Tabs */}
         <div className="flex border-b mb-4">
           <button
-            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === 'backup'
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'general'
                 ? 'border-primary text-primary'
                 : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
+              }`}
+            onClick={() => setActiveTab('general')}
+          >
+            <Cpu className="w-4 h-4" />
+            General
+          </button>
+          <button
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'backup'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
             onClick={() => setActiveTab('backup')}
           >
             <Download className="w-4 h-4" />
             Backup
           </button>
           <button
-            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === 'restore'
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'restore'
                 ? 'border-primary text-primary'
                 : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
+              }`}
             onClick={() => setActiveTab('restore')}
           >
             <Upload className="w-4 h-4" />
@@ -88,8 +97,10 @@ export function BackupRestoreModal({ isOpen, onClose, onRestoreComplete }: Props
         </div>
 
         {/* Tab Content */}
-        <div className="min-h-[200px]">
-          {activeTab === 'backup' ? (
+        <div className="min-h-[300px]">
+          {activeTab === 'general' ? (
+            <GeneralSettings onSuccess={handleSuccess} onError={handleError} />
+          ) : activeTab === 'backup' ? (
             <BackupSection onSuccess={handleSuccess} onError={handleError} />
           ) : (
             <RestoreSection

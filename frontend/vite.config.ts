@@ -22,7 +22,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: [path.resolve(__dirname, '../tests/frontend.setup.ts')],
-    include: ['../tests/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    setupFiles: ['./src/tests/setup.ts'],
+    include: ['./src/tests/**/*.test.{ts,tsx}'],
   },
 })

@@ -14,7 +14,7 @@ export const repoSchemas = {
     properties: {
       url: {
         type: 'string',
-        pattern: '^https://github\\.com/[\\w-]+/[\\w.-]+$',
+        pattern: '^(?:https://github\\.com/)?[\\w-]+/[\\w.-]+$',
       },
       description: { type: 'string', maxLength: 500 },
       category_id: { type: ['integer', 'null'], minimum: 1 },
@@ -129,7 +129,7 @@ export const repoSchemas = {
     properties: {
       url: {
         type: 'string',
-        pattern: '^https://github\\.com/[\\w-]+/[\\w.-]+$',
+        pattern: '^(?:https://github\\.com/)?[\\w-]+/[\\w.-]+$',
       },
     },
     required: ['url'],

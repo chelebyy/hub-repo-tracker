@@ -1,0 +1,23 @@
+{
+  "name": "hub-repo-tracker",
+  "version": "1.0.0",
+  "description": "Centralize and track multiple GitHub repositories.",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "install:all": "npm install --prefix backend && npm install --prefix frontend",
+    "dev": "concurrently \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "backend/src/**/*.ts": "npm run lint --prefix backend --",
+    "frontend/src/**/*.{ts,tsx}": "npm run lint --prefix frontend --"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7"
+  },
+  "author": "chelebyy",
+  "license": "MIT"
+}
