@@ -1,6 +1,6 @@
 {
   "name": "hub-repo-tracker",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "type": "module",
   "bin": {
     "hub-repo-tracker": "dist/app.js"
