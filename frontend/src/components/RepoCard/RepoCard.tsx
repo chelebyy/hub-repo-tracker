@@ -94,6 +94,7 @@ export function RepoCard({ repo, categories, onDelete, onToggleFavorite, onUpdat
   const [tempLocalPath, setTempLocalPath] = useState(repo.local_path || '')
   const [saving, setSaving] = useState(false)
   const [detectingVersion, setDetectingVersion] = useState(false)
+  const [viewingNotes, setViewingNotes] = useState(false)
 
   const versionInfo = getVersionInfo(repo)
   const hasNotification = repo.sync_state?.release_notification_active
@@ -304,10 +305,17 @@ export function RepoCard({ repo, categories, onDelete, onToggleFavorite, onUpdat
 
           {/* Repo Notes - displayed on card */}
           {repo.notes && (
-            <div className="mt-3 bg-muted/40 p-2 rounded-md border border-border/40 hover:bg-muted/60 transition-colors">
+            <div
+              className="mt-3 bg-muted/40 p-2 rounded-md border border-border/40 hover:bg-muted/60 transition-colors cursor-pointer group/notes-area relative"
+              onClick={() => setViewingNotes(true)}
+              title="Click to view full notes"
+            >
               <div className="flex items-center gap-1.5 mb-1 text-muted-foreground/80 font-medium text-[10px] uppercase tracking-wider">
                 <StickyNote className="w-3 h-3" />
                 <span>Notes</span>
+                <span className="ml-auto text-[9px] opacity-0 group-hover/notes-area:opacity-100 transition-opacity">
+                  View Full
+                </span>
               </div>
               <p className="text-xs text-muted-foreground whitespace-pre-wrap line-clamp-3 leading-relaxed">
                 {repo.notes}
@@ -453,6 +461,41 @@ export function RepoCard({ repo, categories, onDelete, onToggleFavorite, onUpdat
             <Button onClick={handleSave} disabled={saving}>
               {saving ? 'Saving...' : 'Save Changes'}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={viewingNotes} onOpenChange={setViewingNotes}>
+        <DialogContent className="sm:max-w-[600px] max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg">
+              <StickyNote className="w-5 h-5 text-primary" />
+              Notes for {repo.name}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-y-auto pr-2 mt-2">
+            <div className="text-sm leading-relaxed whitespace-pre-wrap bg-muted/30 p-4 rounded-lg border border-border/50">
+              {repo.notes}
+            </div>
+          </div>
+
+          <DialogFooter className="mt-4 sm:justify-between">
+            <div className="text-xs text-muted-foreground self-center">
+              {repo.notes?.length || 0} characters
+            </div>
+            <div className="flex gap-2">
+              <Button variant="secondary" onClick={() => {
+                setViewingNotes(false)
+                openEdit()
+              }}>
+                <Pencil className="w-3 h-3 mr-2" />
+                Edit Notes
+              </Button>
+              <Button onClick={() => setViewingNotes(false)}>
+                Close
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

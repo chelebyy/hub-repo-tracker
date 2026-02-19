@@ -1,27 +1,27 @@
-# NPM Publishing Instructions
+# NPM Publishing Instructions (Granular Access Token)
 
-To enable automatic NPM publishing via GitHub Actions, please follow these steps:
+Since "Classic Tokens" are deprecated, you must use a **Granular Access Token** with specific settings to allow CI/CD automation.
 
-1. Generate an **NPM Access Token** if you haven't already:
-    * Log in to npmjs.com.
-    * Go to **Access Tokens**.
-    * Click **Generate New Token** (Classic Token).
-    * Select **Automation** type.
-    * Copy the token.
+## ✅ FIX: Generate a Granular Access Token
 
-2. Add the token to your GitHub Repository Secrets:
-    * Go to your repository on GitHub.
-    * Click **Settings** > **Secrets and variables** > **Actions**.
-    * Click **New repository secret**.
-    * **Name:** `NPM_TOKEN`
-    * **Value:** (Paste your token)
-    * Click **Add secret**.
+1. Log in to [npmjs.com](https://www.npmjs.com/).
+2. Go to **Access Tokens**.
+3. Click **Generate New Token** (Granular Access Token).
+4. **Token Name:** Enter a name (e.g., "GitHub Actions CI").
+5. **Expiration:** Select the maximum allowed (usually 90 days). *Note: You will need to rotate this token when it expires.*
+6. **Permissions:**
+    * **Packages:** Select **Read and write**.
+    * **Scope:** Select **All packages** (or restrict to your specific package/org if preferred).
+7. **Security (CRITICAL):**
+    * You MUST check the box **"Bypass two-factor authentication (2FA)"** or **"Automation"** (wording may vary).
+    * *Without this check, the token will fail in CI/CD with the OTP error.*
+8. **Generate** and copy the token.
 
-3. Once the secret is added, you can trigger the release by creating a new tag:
+## Update GitHub Secret
 
-    ```bash
-    git tag v1.0.9
-    git push origin v1.0.9
-    ```
+1. Go to your GitHub Repository > **Settings** > **Secrets and variables** > **Actions**.
+2. Update the `NPM_TOKEN` secret with the new Granular Token.
 
-    GitHub Actions will then build and publish the package to NPM automatically.
+## Retry Release
+
+Go to GitHub **Actions**, select the failed workflow, and click **Re-run jobs**.

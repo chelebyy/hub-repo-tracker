@@ -1,32 +1,14 @@
-# Sonraki Adımlar: Yayınlama Süreci
+# Hata Giderme: NPM Granular Access Token
 
-1.0.9 Sürümü için gerekli değişiklikler yapıldı ve etiket (`v1.0.9`) oluşturuldu.
+Araştırmalarım gösteriyor ki NPM, Classic Token'ları kullanımdan kaldırıyor. Bu yüzden **Granular Access Token** oluşturmanız gerekiyor, ancak **kritik bir ayar** var.
 
-Ancak, NPM paketinin otomatik yayınlanabilmesi için GitHub tarafında bir ayar yapılması gerekmektedir:
+## ✅ Doğru Granular Token Ayarı
 
-## ⚠️ ÖNEMLİ: NPM Token Ekleme
+1. **npm** > **Access Tokens** > **Generate New Token**.
+2. **Permissions:** "Read and write" seçeneğini seçin.
+3. **Packages:** "All packages" (veya ilgili paket) seçin.
+4. **Security (ÇOK ÖNEMLİ):** Sayfanın altlarında **"Bypass two-factor authentication (2FA)"** veya **"Automation"** onay kutusu olmalıdır.
+    * CI/CD süreçleri için **bu kutuyu mutlaka işaretlemelisiniz**.
+    * Aksi takdirde robot, telefonunuza gelen kodu soramaz ve hata verir.
 
-GitHub Actions'ın NPM'e paket yükleyebilmesi için **NPM_TOKEN** gizli anahtarına ihtiyacı vardır.
-
-Lütfen şu adımları takip edin:
-
-1. **NPM Token Oluşturun:**
-    * npmjs.com adresine giriş yapın.
-    * Profil > Access Tokens > Generate New Token (Classic) seçeneğine gidin.
-    * Type olarak "Automation" seçin.
-    * Oluşan tokenı kopyalayın.
-
-2. **GitHub'a Ekleyin:**
-    * Projenizin GitHub sayfasına gidin.
-    * `Settings` > `Secrets and variables` > `Actions` menüsüne tıklayın.
-    * `New repository secret` butonuna basın.
-    * **Name:** `NPM_TOKEN`
-    * **Value:** (Kopyaladığınız tokenı yapıştırın)
-    * `Add secret` diyerek kaydedin.
-
-3. **Yeniden Deneyin:**
-    * Token eklendikten sonra, GitHub Actions'daki `Build & Quality Check` (veya `CI`) sekmesine gidin.
-    * Başarısız olan son iş akışını (run) bulun ve `Re-run jobs` diyerek tekrar çalıştırın.
-    * Veya yeni bir commit atıp tekrar deneyin.
-
-**Not:** GitHub Release (v1.0.9) otomatik olarak oluşacaktır. Sadece NPM paketi için bu token gereklidir.
+Yeni token'ı oluşturup GitHub'daki `NPM_TOKEN` secret'ını güncelleyin ve işlemi tekrar deneyin.
