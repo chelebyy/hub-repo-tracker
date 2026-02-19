@@ -6,7 +6,7 @@
   "main": "index.js",
   "scripts": {
     "install:all": "npm install --prefix backend && npm install --prefix frontend",
-    "dev": "concurrently \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
+    "dev": "concurrently \"cd backend && npx tsx src/app.ts\" \"npm run dev --prefix frontend\"",
     "prepare": "husky"
   },
   "lint-staged": {

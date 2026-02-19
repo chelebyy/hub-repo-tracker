@@ -1,7 +1,10 @@
 import path from 'node:path';
 
+const isTsxRuntime = process.argv.some((arg) => arg.includes('tsx'));
+const defaultPort = process.env.NODE_ENV === 'development' || isTsxRuntime ? '3001' : '3750';
+
 export const config = {
-  port: Number.parseInt(process.env.PORT || '3001', 10),
+  port: Number.parseInt(process.env.PORT || defaultPort, 10),
   nodeEnv: process.env.NODE_ENV || 'production', // CLI is production by default
   logLevel: process.env.LOG_LEVEL || (process.env.NODE_ENV === 'development' ? 'info' : 'warn'),
   logPath: process.env.LOG_PATH || path.resolve(process.cwd(), 'logs'),

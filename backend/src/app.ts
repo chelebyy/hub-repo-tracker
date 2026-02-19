@@ -192,13 +192,4 @@ const start = async () => {
   }
 };
 
-// Check if run directly (ESM friendly check)
-const isDirectRun = process.argv[1] && (
-  process.argv[1].endsWith('app.js') ||
-  process.argv[1].endsWith('app.ts') ||
-  process.argv[1].includes('hub-repo-tracker')
-);
-
-if (isDirectRun) {
-  start();
-}
+start();
