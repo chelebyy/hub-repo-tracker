@@ -115,7 +115,7 @@ export function RepoCard({ repo, categories, onDelete, onToggleFavorite, onUpdat
         )}
 
         {/* Decorative gradient corner */}
-        <div className="absolute -top-12 -right-12 w-24 h-24 bg-primary/5 blur-3xl group-hover:bg-primary/10 transition-all duration-500" />
+        <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 blur-2xl group-hover:bg-primary/10 transition-all duration-500" />
 
         <CardHeader className="p-4 pb-2 relative z-10 space-y-0">
           <div className="flex items-start justify-between gap-2">

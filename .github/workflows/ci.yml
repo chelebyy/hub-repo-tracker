@@ -8,38 +8,134 @@ on:
     branches: [main, master]
 
 jobs:
-  build:
+  # ─────────────────────────────────────────
+  # 1. Lint · Typecheck · Security Scan
+  # ─────────────────────────────────────────
+  lint-and-check:
+    name: Lint · Typecheck · Security
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Use Node.js
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18.x'
           cache: 'npm'
-      - run: npm ci
-      - run: npm run lint --if-present
-      - run: npm run build --if-present
 
+      - name: Install Dependencies
+        run: npm run install:all
+
+      - name: Lint Backend
+        run: npm run lint --prefix backend --if-present
+
+      - name: Lint Frontend
+        run: npm run lint --prefix frontend --if-present
+
+      - name: Typecheck Backend
+        run: npx tsc --noEmit --project backend/tsconfig.json
+
+      - name: Typecheck Frontend
+        run: npx tsc --noEmit --project frontend/tsconfig.json
+
+      - name: Security Scan – Backend
+        run: npm audit --audit-level=high --prefix backend
+
+      - name: Security Scan – Frontend
+        run: npm audit --audit-level=high --prefix frontend
+
+  # ─────────────────────────────────────────
+  # 2. Node Build (NPM package)
+  # ─────────────────────────────────────────
+  build-node:
+    name: Node Build
+    needs: lint-and-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm run install:all
+
+      - name: Build (frontend + backend)
+        run: |
+          cd backend
+          npm run build:all
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-dist
+          path: backend/dist/
+          retention-days: 1
+
+  # ─────────────────────────────────────────
+  # 3. Docker Build (cross-platform check)
+  # ─────────────────────────────────────────
+  build-docker:
+    name: Docker Build
+    needs: lint-and-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Backend Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: false
+          tags: hub-repo-tracker-backend:ci
+
+      - name: Build Frontend Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: false
+          tags: hub-repo-tracker-frontend:ci
+
+  # ─────────────────────────────────────────
+  # 4. Publish (sadece tag push)
+  # ─────────────────────────────────────────
   publish:
-    needs: build
+    name: Publish
+    needs: [build-node, build-docker]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: Use Node.js
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18.x'
           registry-url: 'https://registry.npmjs.org'
-      - run: npm ci
-      - run: npm run build --if-present
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-dist
+          path: backend/dist/
+
       - name: Publish to NPM
-        run: npm publish --access public
+        run: |
+          cd backend
+          npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')

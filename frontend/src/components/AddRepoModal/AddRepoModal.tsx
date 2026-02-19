@@ -27,10 +27,10 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 interface Props {
-  isOpen: boolean
-  onClose: () => void
-  onSubmit: (url: string, categoryId?: number, notes?: string, localPath?: string, installedVersion?: string) => Promise<void>
-  categories: Category[]
+  readonly isOpen: boolean
+  readonly onClose: () => void
+  readonly onSubmit: (url: string, categoryId?: number, notes?: string, localPath?: string, installedVersion?: string) => Promise<void>
+  readonly categories: readonly Category[]
 }
 
 export function AddRepoModal({ isOpen, onClose, onSubmit, categories }: Props) {
@@ -111,7 +111,9 @@ export function AddRepoModal({ isOpen, onClose, onSubmit, categories }: Props) {
       return
     }
 
-    const isValidUrl = /^(?:https?:\/\/)?(?:www\.)?github\.com\/[\w-]+\/[\w.-]+\/?$|^[\w-]+\/[\w.-]+$/.test(trimmedUrl)
+    const githubFull = /^(?:https?:\/\/)?(?:www\.)?github\.com\/[\w-]+\/[\w.-]+\/?$/.test(trimmedUrl)
+    const shorthand = /^[\w-]+\/[\w.-]+$/.test(trimmedUrl)
+    const isValidUrl = githubFull || shorthand
 
     if (isValidUrl) {
       setPreviewing(true)
@@ -210,11 +212,11 @@ export function AddRepoModal({ isOpen, onClose, onSubmit, categories }: Props) {
                   <AvatarFallback>{(preview.owner || '?').substring(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-foreground truncate">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="font-semibold text-foreground truncate min-w-0">
                       {preview.full_name}
                     </span>
-                    <div className="flex items-center gap-1 text-yellow-500 text-sm">
+                    <div className="flex items-center gap-1 text-yellow-500 text-sm shrink-0">
                       <Star className="w-3 h-3 fill-current" />
                       {preview.stars.toLocaleString()}
                     </div>

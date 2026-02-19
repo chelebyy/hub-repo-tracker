@@ -147,7 +147,7 @@ function AppContent() {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-background font-sans antialiased text-foreground">
+      <div className="min-h-screen bg-background font-sans antialiased text-foreground overflow-x-hidden">
         <header className={cn(
           "sticky top-0 z-30 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-all duration-300",
           sidebarOpen ? "lg:pl-72" : "lg:pl-0"

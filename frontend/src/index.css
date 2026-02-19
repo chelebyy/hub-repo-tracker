@@ -73,8 +73,13 @@
     @apply border-border;
   }
 
+  html {
+    overflow-x: hidden;
+  }
+
   body {
     @apply bg-background text-foreground antialiased font-sans;
+    overflow-x: hidden;
   }
 }
 
