@@ -1,6 +1,6 @@
 {
   "name": "hub-repo-tracker",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "Centralize and track multiple GitHub repositories.",
   "private": true,
   "main": "index.js",
