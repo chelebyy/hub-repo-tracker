@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'dotenv/config';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import multipart from '@fastify/multipart';
@@ -19,6 +20,7 @@ import { categoryRoutes } from './features/categories/routes.js';
 import { importRoutes } from './features/import/routes.js';
 import { systemRoutes } from './features/system/routes.js';
 import { backupRoutes } from './features/backup/routes.js';
+import { filesystemRoutes } from './features/filesystem/routes.js';
 import { startSyncJob, stopSyncJob } from './shared/jobs/sync-job.js';
 import { repoSchemas } from './features/repos/schema.js';
 import { categorySchemas } from './features/categories/schema.js';
@@ -97,6 +99,7 @@ await app.register(categoryRoutes);
 await app.register(importRoutes);
 await app.register(systemRoutes);
 await app.register(backupRoutes);
+await app.register(filesystemRoutes);
 
 // Serve static files (Frontend) - MUST be after API routes to avoid conflicts (or use prefix)
 // configured to serve from 'public' directory which will be in 'dist/public'

@@ -130,3 +130,16 @@ export interface RestoreResult {
 }
 
 export type RestoreMode = 'merge' | 'replace'
+
+export interface FileSystemEntry {
+  name: string
+  path: string
+  isDirectory: boolean
+}
+
+export interface ListDirectoryResult {
+  path: string
+  entries: FileSystemEntry[]
+  parent: string | null
+  error?: string
+}

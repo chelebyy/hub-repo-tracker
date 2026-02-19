@@ -143,20 +143,38 @@ function parseGitConfig(gitConfigPath: string): { owner: string; repo: string; u
   }
 }
 
-function scanDirectory(basePath: string): ScannedProject[] {
+// Ignore patterns for performance
+const IGNORED_FOLDERS = new Set([
+  'node_modules',
+  '.git',
+  '.vscode',
+  '.idea',
+  'dist',
+  'build',
+  'out',
+  'coverage',
+  '__pycache__',
+]);
+
+function scanDirectory(basePath: string, depth = 0, maxDepth = 3): ScannedProject[] {
+  if (depth > maxDepth) {
+    return [];
+  }
+
   const projects: ScannedProject[] = [];
 
   try {
     const entries = fs.readdirSync(basePath, { withFileTypes: true });
 
     for (const entry of entries) {
-      if (!entry.isDirectory()) {
+      if (!entry.isDirectory() || IGNORED_FOLDERS.has(entry.name)) {
         continue;
       }
 
-      const projectPath = path.join(basePath, entry.name);
-      const gitConfigPath = path.join(projectPath, '.git', 'config');
+      const fullPath = path.join(basePath, entry.name);
 
+      // Check if this directory ITSELF is a project
+      const gitConfigPath = path.join(fullPath, '.git', 'config');
       let githubRepo: ScannedProject['githubRepo'] = null;
       let hasGitConfig = false;
 
@@ -165,17 +183,29 @@ function scanDirectory(basePath: string): ScannedProject[] {
         githubRepo = parseGitConfig(gitConfigPath);
       }
 
-      const projectType = detectProjectType(projectPath);
-      const version = extractVersion(projectPath, projectType);
+      const projectType = detectProjectType(fullPath);
 
-      projects.push({
-        path: projectPath,
-        name: entry.name,
-        gitConfigPath: hasGitConfig ? gitConfigPath : null,
-        githubRepo,
-        projectType,
-        version,
-      });
+      // If it's a known project type OR has git config, add it
+      if (projectType !== 'unknown' || hasGitConfig) {
+        const version = extractVersion(fullPath, projectType);
+        projects.push({
+          path: fullPath,
+          name: entry.name,
+          gitConfigPath: hasGitConfig ? gitConfigPath : null,
+          githubRepo,
+          projectType,
+          version,
+        });
+
+        // Optimization: If we found a project, we typically don't search INSIDE it 
+        // for other projects (unless it's a monorepo root, but for now let's stop here to be safe/fast)
+        // If user needs monorepo support, we can adjust this policy later.
+        continue;
+      }
+
+      // If not a project, recurse deeper
+      const subProjects = scanDirectory(fullPath, depth + 1, maxDepth);
+      projects.push(...subProjects);
     }
   } catch (error) {
     console.error(`Error scanning directory ${basePath}:`, error);
@@ -184,8 +214,8 @@ function scanDirectory(basePath: string): ScannedProject[] {
   return projects;
 }
 
-export function scanProjectsFolder(): FolderScanResult {
-  const projectsPath = config.projects.path;
+export function scanProjectsFolder(manualPath?: string): FolderScanResult {
+  const projectsPath = manualPath || config.projects.path;
 
   // Resolve to absolute path
   const absolutePath = path.resolve(projectsPath);

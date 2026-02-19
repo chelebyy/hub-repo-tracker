@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { api } from '@/services/api';
 import type { ScannedProject, ManifestSource } from '@/types';
 import { parseGitConfig } from '@/utils/git-config-parser';
 import { parseManifestFile, type ParsedManifest } from '@/utils/manifest-parser';
@@ -208,10 +209,51 @@ export function useDirectoryScanner() {
         }
     }, []);
 
+    const scanServerPath = useCallback(async (path: string) => {
+        setStatus({
+            scanning: true,
+            totalScanned: 0,
+            projectsFound: 0,
+            currentPath: path,
+            error: null,
+        });
+        setScanResults([]);
+
+        try {
+            const res = await api.scanProjects(path);
+            if (res.success) {
+                setScanResults(res.data.projects);
+                setStatus(prev => ({
+                    ...prev,
+                    projectsFound: res.data.projects.length,
+                    totalScanned: res.data.totalFound
+                }));
+            }
+        } catch (err) {
+            console.error('Server scan failed:', err);
+            setStatus(prev => ({ ...prev, error: err instanceof Error ? err.message : 'Failed to scan server directory' }));
+        } finally {
+            setStatus(prev => ({ ...prev, scanning: false }));
+        }
+    }, []);
+
+    const reset = useCallback(() => {
+        setScanResults([]);
+        setStatus({
+            scanning: false,
+            totalScanned: 0,
+            projectsFound: 0,
+            currentPath: '',
+            error: null,
+        });
+    }, []);
+
     return {
         scanDirectory,
+        scanServerPath,
         scanResults,
         status,
+        reset,
         isSupported: 'showDirectoryPicker' in globalThis
     };
 }

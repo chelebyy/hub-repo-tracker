@@ -31,7 +31,9 @@
 
 ### 📁 Advanced Import & Local Sync
 
-- **Browser-Native Scanning:** Use the **File System Access API** to scan your local folders for GitHub repositories directly from the browser. No complex Docker volume mapping required.
+- **Unlimited Server-Side Scanning:** Bypasses browser restrictions to scan any folder on your system (e.g., `C:\Users\muham`, `/home/user`) directly from the backend.
+- **Smart Recursive Scanning:** Automatically detects nested repositories up to 4 levels deep, intelligently ignoring heavy folders like `node_modules` or `dist`.
+- **Local Browser Fallback:** Includes a browser-native scanner for quick, single-folder imports without server access.
 - **Local Path Association:** Link a remote repository to its local directory on your machine.
 
 ---

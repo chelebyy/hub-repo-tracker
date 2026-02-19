@@ -19,6 +19,7 @@ import {
 import type { ScannedProject, ManifestSource } from '@/types'
 import { cn } from '@/lib/utils'
 import { useDirectoryScanner } from '@/hooks/useDirectoryScanner'
+import ServerFileBrowser from './ServerFileBrowser'
 
 interface Props {
   isOpen: boolean
@@ -51,16 +52,19 @@ const detectionSourceConfig: Record<ManifestSource, { icon: typeof Github; label
 }
 
 export function ImportFromFolderModal({ isOpen, onClose, onImport }: Props) {
-  const { scanDirectory, scanResults, status, isSupported } = useDirectoryScanner()
+  const { scanDirectory, scanServerPath, scanResults, status, isSupported, reset } = useDirectoryScanner()
   const [importing, setImporting] = useState<string | null>(null)
   const [imported, setImported] = useState<Set<string>>(new Set())
+  const [mode, setMode] = useState<'client' | 'server'>('server')
 
   // Reset state when modal opens/closes
   useEffect(() => {
     if (!isOpen) {
       setImported(new Set())
+      setMode('server')
+      reset()
     }
-  }, [isOpen])
+  }, [isOpen, reset])
 
   const handleImport = async (project: ScannedProject) => {
     if (!project.githubRepo) return
@@ -92,8 +96,32 @@ export function ImportFromFolderModal({ isOpen, onClose, onImport }: Props) {
           </DialogDescription>
         </DialogHeader>
 
+        <div className="flex items-center gap-2 mb-4 border-b">
+          <Button
+            variant={mode === 'server' ? 'default' : 'ghost'}
+            className="rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary"
+            onClick={() => setMode('server')}
+          >
+            Server Browser
+          </Button>
+          <Button
+            variant={mode === 'client' ? 'default' : 'ghost'}
+            className="rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary"
+            onClick={() => setMode('client')}
+          >
+            Local Browser (Restricted)
+          </Button>
+        </div>
+
         <div className="py-4">
-          {!isSupported && (
+          {mode === 'server' && scanResults.length === 0 && !status.scanning && !status.error && (
+            <ServerFileBrowser
+              onSelect={scanServerPath}
+              onCancel={onClose}
+            />
+          )}
+
+          {mode === 'client' && !isSupported && (
             <div className="p-4 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-sm mb-4">
               Your browser does not support local folder scanning. Please use Chrome, Edge, or Opera.
             </div>
@@ -102,13 +130,24 @@ export function ImportFromFolderModal({ isOpen, onClose, onImport }: Props) {
           {status.error && (
             <div className="p-4 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-sm mb-4">
               {status.error}
-              <Button variant="outline" size="sm" onClick={scanDirectory} className="ml-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (mode === 'client') {
+                    scanDirectory()
+                  } else {
+                    reset()
+                  }
+                }}
+                className="ml-2"
+              >
                 Retry
               </Button>
             </div>
           )}
 
-          {scanResults.length === 0 && !status.scanning && !status.error && (
+          {mode === 'client' && scanResults.length === 0 && !status.scanning && !status.error && (
             <div className="text-center py-8">
               <FolderOpen className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
               <p className="text-muted-foreground mb-4">
@@ -143,7 +182,7 @@ export function ImportFromFolderModal({ isOpen, onClose, onImport }: Props) {
                 <p className="text-sm text-muted-foreground">
                   Found {githubProjects.length} GitHub repos in {scanResults.length} projects
                 </p>
-                <Button variant="outline" size="sm" onClick={scanDirectory} className="gap-2">
+                <Button variant="outline" size="sm" onClick={reset} className="gap-2">
                   <FolderSearch className="w-4 h-4" />
                   Scan Another Folder
                 </Button>

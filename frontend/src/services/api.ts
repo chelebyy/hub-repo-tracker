@@ -1,4 +1,4 @@
-import type { Repo, Category, RepoPreview, Owner, DashboardStats, FolderScanResult, BackupPreview, RestoreResult, RestoreMode } from '@/types'
+import type { Repo, Category, RepoPreview, Owner, DashboardStats, FolderScanResult, BackupPreview, RestoreResult, RestoreMode, ListDirectoryResult } from '@/types'
 
 const API_BASE = '/api'
 
@@ -192,5 +192,11 @@ export const api = {
     }
     const text = await res.text()
     return JSON.parse(text)
+  },
+
+  // Filesystem
+  listDirectories: (path?: string) => {
+    const url = path ? `/filesystem/list?path=${encodeURIComponent(path)}` : '/filesystem/list'
+    return request<ApiResponse<ListDirectoryResult>>(url)
   },
 }
