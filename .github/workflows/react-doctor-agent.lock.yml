@@ -22,7 +22,7 @@
 # For more information: https://github.github.com/gh-aw/introduction/overview/
 #
 #
-# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"34c1a6331df83a4c75658bb7d7892744530b183f25056fed4eeeccf79efc00e1","compiler_version":"v0.46.5"}
+# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"5ad66ec23c747607e66de32610b746cc63a1ed1e7e343f7c66f9c48f39e772aa","compiler_version":"v0.46.5"}
 
 name: "React Doctor Check"
 "on":
@@ -42,6 +42,9 @@ concurrency:
   cancel-in-progress: true
 
 run-name: "React Doctor Check"
+
+env:
+  GH_AW_MODEL_DETECTION_COPILOT: gpt-4o
 
 jobs:
   activation:

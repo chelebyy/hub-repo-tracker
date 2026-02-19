@@ -1,5 +1,7 @@
 ---
 name: CI Pipeline
+env:
+  GH_AW_MODEL_DETECTION_COPILOT: gpt-4o
 on:
   push:
     branches: [main, master]
