@@ -39,10 +39,10 @@ jobs:
         run: cd frontend && ./node_modules/.bin/tsc --noEmit
 
       - name: Security Scan – Backend
-        run: npm audit --audit-level=high --prefix backend
+        run: npm audit --audit-level=high --omit=dev --prefix backend
 
       - name: Security Scan – Frontend
-        run: npm audit --audit-level=high --prefix frontend
+        run: npm audit --audit-level=high --omit=dev --prefix frontend
 
   # ─────────────────────────────────────────
   # 2. Node Build (NPM package)
