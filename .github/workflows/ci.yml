@@ -33,10 +33,10 @@ jobs:
         run: npm run lint --prefix frontend --if-present
 
       - name: Typecheck Backend
-        run: npx tsc --noEmit --project backend/tsconfig.json
+        run: cd backend && ./node_modules/.bin/tsc --noEmit
 
       - name: Typecheck Frontend
-        run: npx tsc --noEmit --project frontend/tsconfig.json
+        run: cd frontend && ./node_modules/.bin/tsc --noEmit
 
       - name: Security Scan – Backend
         run: npm audit --audit-level=high --prefix backend
