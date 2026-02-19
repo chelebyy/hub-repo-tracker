@@ -148,7 +148,7 @@ export const api = {
     a.href = url
     a.download = `hub-repo-tracker-backup-${new Date().toISOString().split('T')[0]}.json`
     a.click()
-    URL.revokeObjectURL(url)
+    setTimeout(() => URL.revokeObjectURL(url), 100)
   },
 
   exportSqlite: async () => {
@@ -160,7 +160,7 @@ export const api = {
     a.href = url
     a.download = `hub-repo-tracker-backup-${new Date().toISOString().split('T')[0]}.db`
     a.click()
-    URL.revokeObjectURL(url)
+    setTimeout(() => URL.revokeObjectURL(url), 100)
   },
 
   previewBackup: async (file: File): Promise<BackupPreview> => {

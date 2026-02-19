@@ -92,13 +92,22 @@ export async function repoRoutes(app: FastifyInstance): Promise<void> {
   });
 
   // GET /api/owners - Get all owners with repo counts
-  app.get('/api/owners', async () => {
-    const owners = repoService.getOwners();
-
-    return {
-      success: true,
-      data: owners,
-    };
+  app.get('/api/owners', async (req, reply) => {
+    try {
+      const owners = repoService.getOwners();
+      return {
+        success: true,
+        data: owners,
+      };
+    } catch (err: any) {
+      req.log.error(err);
+      return reply.code(500).send({
+        success: false,
+        error: 'Internal Server Error',
+        message: err.message,
+        stack: err.stack
+      });
+    }
   });
 
   // POST /api/repos - Create new repo

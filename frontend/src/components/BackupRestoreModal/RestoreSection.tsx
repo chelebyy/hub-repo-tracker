@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useReducer, useRef } from 'react'
 import { Upload, Loader2, AlertTriangle, CheckCircle, FileUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -13,43 +13,77 @@ import { api } from '@/services/api'
 import type { BackupPreview, RestoreMode } from '@/types'
 
 interface Props {
-  onSuccess: (message: string) => void
-  onError: (message: string) => void
-  onRestoreComplete: () => void
+  readonly onSuccess: (message: string) => void
+  readonly onError: (message: string) => void
+  readonly onRestoreComplete: () => void
+}
+
+type State = {
+  file: File | null
+  preview: BackupPreview | null
+  previewError: string | null
+  loading: boolean
+  mode: RestoreMode
+}
+
+type Action =
+  | { type: 'SET_FILE'; payload: File }
+  | { type: 'SET_PREVIEW'; payload: BackupPreview }
+  | { type: 'SET_PREVIEW_ERROR'; payload: string }
+  | { type: 'SET_LOADING'; payload: boolean }
+  | { type: 'SET_MODE'; payload: RestoreMode }
+  | { type: 'RESET' }
+
+const initialState: State = {
+  file: null,
+  preview: null,
+  previewError: null,
+  loading: false,
+  mode: 'merge',
+}
+
+function reducer(state: State, action: Action): State {
+  switch (action.type) {
+    case 'SET_FILE':
+      return { ...state, file: action.payload, preview: null, previewError: null, loading: true }
+    case 'SET_PREVIEW':
+      return { ...state, preview: action.payload, loading: false }
+    case 'SET_PREVIEW_ERROR':
+      return { ...state, previewError: action.payload, file: null, loading: false }
+    case 'SET_LOADING':
+      return { ...state, loading: action.payload }
+    case 'SET_MODE':
+      return { ...state, mode: action.payload }
+    case 'RESET':
+      return initialState
+    default:
+      return state
+  }
 }
 
 export function RestoreSection({ onSuccess, onError, onRestoreComplete }: Props) {
-  const [file, setFile] = useState<File | null>(null)
-  const [preview, setPreview] = useState<BackupPreview | null>(null)
-  const [previewError, setPreviewError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [mode, setMode] = useState<RestoreMode>('merge')
+  const [state, dispatch] = useReducer(reducer, initialState)
+  const { file, preview, previewError, loading, mode } = state
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
     if (!selectedFile) return
 
-    setFile(selectedFile)
-    setPreview(null)
-    setPreviewError(null)
-    setLoading(true)
+    dispatch({ type: 'SET_FILE', payload: selectedFile })
 
     try {
       const result = await api.previewBackup(selectedFile)
-      setPreview(result)
+      dispatch({ type: 'SET_PREVIEW', payload: result })
     } catch (err) {
-      setPreviewError(err instanceof Error ? err.message : 'Cannot read file')
-      setFile(null)
-    } finally {
-      setLoading(false)
+      dispatch({ type: 'SET_PREVIEW_ERROR', payload: err instanceof Error ? err.message : 'Cannot read file' })
     }
   }
 
   const handleRestore = async () => {
     if (!file) return
 
-    setLoading(true)
+    dispatch({ type: 'SET_LOADING', payload: true })
     try {
       const result = await api.importBackup(file, mode)
       onSuccess(
@@ -58,22 +92,18 @@ export function RestoreSection({ onSuccess, onError, onRestoreComplete }: Props)
       )
       onRestoreComplete()
       // Reset state
-      setFile(null)
-      setPreview(null)
+      dispatch({ type: 'RESET' })
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
     } catch (err) {
       onError(err instanceof Error ? err.message : 'Restore failed')
-    } finally {
-      setLoading(false)
+      dispatch({ type: 'SET_LOADING', payload: false })
     }
   }
 
   const handleReset = () => {
-    setFile(null)
-    setPreview(null)
-    setPreviewError(null)
+    dispatch({ type: 'RESET' })
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
@@ -86,8 +116,8 @@ export function RestoreSection({ onSuccess, onError, onRestoreComplete }: Props)
       </div>
 
       {/* File Input */}
-      <div
-        className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
+      <button
+        className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors w-full bg-transparent p-0 m-0"
         onClick={() => fileInputRef.current?.click()}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
@@ -95,8 +125,7 @@ export function RestoreSection({ onSuccess, onError, onRestoreComplete }: Props)
             fileInputRef.current?.click();
           }
         }}
-        tabIndex={0}
-        role="button"
+        type="button"
         aria-label="Select backup file"
       >
         <input
@@ -118,7 +147,7 @@ export function RestoreSection({ onSuccess, onError, onRestoreComplete }: Props)
         <p className="text-xs text-muted-foreground">
           JSON (.json) or SQLite (.db, .sqlite)
         </p>
-      </div>
+      </button>
 
       {/* Preview Error */}
       {previewError && (
@@ -157,7 +186,7 @@ export function RestoreSection({ onSuccess, onError, onRestoreComplete }: Props)
             <Label>Restore mode</Label>
             <Select
               value={mode}
-              onValueChange={(v: RestoreMode) => setMode(v)}
+              onValueChange={(v: RestoreMode) => dispatch({ type: 'SET_MODE', payload: v })}
               disabled={loading}
             >
               <SelectTrigger>

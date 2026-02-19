@@ -148,33 +148,10 @@ const start = async () => {
   try {
     const address = await app.listen({ port: config.port, host: '0.0.0.0' });
 
-    if (config.nodeEnv !== 'development') {
-      console.log('\x1b[36m%s\x1b[0m', String.raw`
-   __ __         __  ____                 ______               __            
-  / // /_ ______/ / / __ \___ ___  ___   /_  __/__________ ____/ /_____ ____ 
- / _  / // / __  / / /_/ / -_) _ \/ _ \   / / / __/ _  / __/ _  / -_) __/
-/_//_/\_,_/\__,_/  \____/\__/ .__/\___/  /_/ /_/  \_,_/\__/ \__,_/\__/_/   
-                           /_/                                               
-      `);
-      console.log(`🚀 Hub Repo Tracker is running at: \x1b[32m${address}\x1b[0m`);
-      console.log(`📁 Data Directory: \x1b[34m${path.dirname(config.database.path)}\x1b[0m`);
-
-      // Check for token in env or database
-      let hasToken = !!config.github.token;
-      if (!hasToken) {
-        try {
-          const row = db.prepare('SELECT value FROM settings WHERE key = ?').get('github_token') as { value: string } | undefined;
-          if (row?.value) hasToken = true;
-        } catch {
-          // Ignore DB errors during startup check
-        }
-      }
-
-      if (!hasToken) {
-        console.log('\x1b[33m%s\x1b[0m', '⚠️  No GITHUB_TOKEN found. Please add it in settings for full functionality.');
-      }
-    } else {
+    if (config.nodeEnv === 'development') {
       app.log.info(`Server listening at ${address}`);
+    } else {
+      printStartupBanner(address);
     }
 
     // Auto-open browser in production mode (skip in Docker/CI)
@@ -189,6 +166,33 @@ const start = async () => {
   } catch (error) {
     app.log.error(error, 'Failed to start server');
     process.exit(1);
+  }
+};
+
+const printStartupBanner = (address: string) => {
+  console.log('\x1b[36m%s\x1b[0m', String.raw`
+   __ __         __  ____                 ______               __            
+  / // /_ ______/ / / __ \___ ___  ___   /_  __/__________ ____/ /_____ ____ 
+ / _  / // / __  / / /_/ / -_) _ \/ _ \   / / / __/ _  / __/ _  / -_) __/
+/_//_/\_,_/\__,_/  \____/\__/ .__/\___/  /_/ /_/  \_,_/\__/ \__,_/\__/_/   
+                           /_/                                               
+      `);
+  console.log(`🚀 Hub Repo Tracker is running at: \x1b[32m${address}\x1b[0m`);
+  console.log(`📁 Data Directory: \x1b[34m${path.dirname(config.database.path)}\x1b[0m`);
+
+  // Check for token in env or database
+  let hasToken = Boolean(config.github.token);
+  if (!hasToken) {
+    try {
+      const row = db.prepare('SELECT value FROM settings WHERE key = ?').get('github_token') as { value: string } | undefined;
+      if (row?.value) hasToken = true;
+    } catch {
+      // Ignore DB errors during startup check
+    }
+  }
+
+  if (!hasToken) {
+    console.log('\x1b[33m%s\x1b[0m', '⚠️  No GITHUB_TOKEN found. Please add it in settings for full functionality.');
   }
 };
 

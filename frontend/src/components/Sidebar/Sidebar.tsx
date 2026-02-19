@@ -10,40 +10,42 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
 
 interface Props {
-  isOpen: boolean
-  onToggle: () => void
-  categories: Category[]
+  readonly isOpen: boolean
+  readonly onToggle: () => void
+  readonly categories: Category[]
 
-  selectedCategoryId: number | null
+  readonly selectedCategoryId: number | null
 
-  onSelectCategory: (id: number | null) => void
+  readonly onSelectCategory: (id: number | null) => void
 
-  repoCounts: Map<string | number, number>
-  totalRepos: number
-  onOpenCategoryManager: () => void
-  stats?: { total: number; with_updates: number; favorites: number } | null
+  readonly repoCounts: Map<string | number, number>
+  readonly totalRepos: number
+  readonly onOpenCategoryManager: () => void
+  readonly stats?: { total: number; with_updates: number; favorites: number } | null
 }
 
-export function Sidebar({
-  isOpen,
-  onToggle,
-  categories,
+interface SidebarContentProps {
+  readonly stats?: { total: number; with_updates: number; favorites: number } | null
+  readonly onOpenCategoryManager: () => void
+  readonly onSelectCategory: (id: number | null) => void
+  readonly setMobileOpen: (open: boolean) => void
+  readonly selectedCategoryId: number | null
+  readonly totalRepos: number
+  readonly customCategories: Category[]
+  readonly repoCounts: Map<string | number, number>
+}
 
-  selectedCategoryId,
-
-  onSelectCategory,
-
-  repoCounts,
-  totalRepos,
-  onOpenCategoryManager,
+function SidebarContent({
   stats,
-}: Props) {
-
-  const [mobileOpen, setMobileOpen] = useState(false)
-
-  const customCategories = categories.filter(c => c.type === 'custom')
-
-  const SidebarContent = () => (
+  onOpenCategoryManager,
+  onSelectCategory,
+  setMobileOpen,
+  selectedCategoryId,
+  totalRepos,
+  customCategories,
+  repoCounts,
+}: SidebarContentProps) {
+  return (
     <div className="flex flex-col h-full bg-card">
       {stats && (
         <div className="px-4 py-3 border-b border-border space-y-2">
@@ -84,7 +86,7 @@ export function Sidebar({
             }}
             className={cn(
               "w-full justify-start gap-3 px-3 py-2.5 h-auto font-medium transition-all duration-200",
-              !selectedCategoryId
+              selectedCategoryId === null
                 ? "bg-primary/10 text-primary shadow-sm border border-primary/20"
                 : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
             )}
@@ -121,6 +123,21 @@ export function Sidebar({
       </ScrollArea>
     </div>
   )
+}
+
+export function Sidebar({
+  isOpen,
+  onToggle,
+  categories,
+  selectedCategoryId,
+  onSelectCategory,
+  repoCounts,
+  totalRepos,
+  onOpenCategoryManager,
+  stats,
+}: Props) {
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const customCategories = categories.filter(c => c.type === 'custom')
 
   return (
     <>
@@ -140,12 +157,19 @@ export function Sidebar({
             <SheetTitle>Menu</SheetTitle>
           </SheetHeader>
           <div className="h-[calc(100%-53px)]">
-            <SidebarContent />
+            <SidebarContent
+              stats={stats}
+              onOpenCategoryManager={onOpenCategoryManager}
+              onSelectCategory={onSelectCategory}
+              setMobileOpen={setMobileOpen}
+              selectedCategoryId={selectedCategoryId}
+              totalRepos={totalRepos}
+              customCategories={customCategories}
+              repoCounts={repoCounts}
+            />
           </div>
         </SheetContent>
       </Sheet>
-
-      {/* Desktop Sidebar Toggle removed, moved to App header */}
 
       {/* Desktop Sidebar */}
       <aside
@@ -164,7 +188,16 @@ export function Sidebar({
             <PanelLeftClose className="w-4 h-4" />
           </Button>
           <div className="pt-8 h-full">
-            <SidebarContent />
+            <SidebarContent
+              stats={stats}
+              onOpenCategoryManager={onOpenCategoryManager}
+              onSelectCategory={onSelectCategory}
+              setMobileOpen={setMobileOpen}
+              selectedCategoryId={selectedCategoryId}
+              totalRepos={totalRepos}
+              customCategories={customCategories}
+              repoCounts={repoCounts}
+            />
           </div>
         </div>
       </aside>

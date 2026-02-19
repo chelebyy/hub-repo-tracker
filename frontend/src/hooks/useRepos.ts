@@ -32,43 +32,70 @@ export function useRepos(categoryId?: number) {
   }, [fetchRepos])
 
   const addRepo = async (url: string, catId?: number, notes?: string, localPath?: string, installedVersion?: string) => {
-    const response = await api.addRepo(url, catId, notes, localPath, installedVersion)
-    setRepos((prev) => [...prev, response.data])
-    // Refetch to get updated meta
-    await fetchRepos({ silent: true })
-    return response.data
+    try {
+      const response = await api.addRepo(url, catId, notes, localPath, installedVersion)
+      setRepos((prev) => [...prev, response.data])
+      await fetchRepos({ silent: true })
+      return response.data
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add repo')
+      throw err
+    }
   }
 
   const updateRepo = async (id: number, data: { notes?: string; category_id?: number | null; installed_version?: string | null; local_path?: string | null }) => {
-    const response = await api.updateRepo(id, data)
-    setRepos((prev) => prev.map((r) => (r.id === id ? response.data : r)))
-    await fetchRepos({ silent: true })
-    return response.data
+    try {
+      const response = await api.updateRepo(id, data)
+      setRepos((prev) => prev.map((r) => (r.id === id ? response.data : r)))
+      await fetchRepos({ silent: true })
+      return response.data
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update repo')
+      throw err
+    }
   }
 
   const deleteRepo = async (id: number) => {
-    await api.deleteRepo(id)
-    setRepos((prev) => prev.filter((r) => r.id !== id))
-    // Refetch to get updated meta
-    await fetchRepos({ silent: true })
+    try {
+      await api.deleteRepo(id)
+      setRepos((prev) => prev.filter((r) => r.id !== id))
+      await fetchRepos({ silent: true })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete repo')
+      throw err
+    }
   }
 
   const toggleFavorite = async (id: number) => {
-    const response = await api.toggleFavorite(id)
-    setRepos((prev) => prev.map((r) => (r.id === id ? response.data : r)))
-    // Refetch to get updated meta (silently to prevent flicker)
-    await fetchRepos({ silent: true })
+    try {
+      const response = await api.toggleFavorite(id)
+      setRepos((prev) => prev.map((r) => (r.id === id ? response.data : r)))
+      await fetchRepos({ silent: true })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to toggle favorite')
+      throw err
+    }
   }
 
   const syncAll = async () => {
-    await api.syncAll()
-    await fetchRepos({ silent: true })
+    try {
+      await api.syncAll()
+      await fetchRepos({ silent: true })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to sync')
+      throw err
+    }
   }
 
   const acknowledgeRepo = async (id: number, version: string) => {
-    const response = await api.acknowledgeUpdate(id, version)
-    setRepos((prev) => prev.map((r) => (r.id === id ? response.data : r)))
-    await fetchRepos({ silent: true })
+    try {
+      const response = await api.acknowledgeUpdate(id, version)
+      setRepos((prev) => prev.map((r) => (r.id === id ? response.data : r)))
+      await fetchRepos({ silent: true })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to acknowledge update')
+      throw err
+    }
   }
 
   return { repos, meta, loading, error, addRepo, updateRepo, deleteRepo, toggleFavorite, syncAll, acknowledgeRepo, refetch: fetchRepos }

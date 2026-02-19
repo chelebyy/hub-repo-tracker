@@ -195,9 +195,9 @@ export function ImportFromFolderModal({ isOpen, onClose, onImport }: Props) {
                       <Github className="w-4 h-4" />
                       GitHub Repositories
                     </h4>
-                    {githubProjects.map((project, index) => (
+                    {githubProjects.map((project) => (
                       <div
-                        key={`${project.path}-${index}`}
+                        key={project.path}
                         className={cn(
                           "p-3 rounded-lg border bg-card/50 transition-colors",
                           imported.has(project.path) && "opacity-50"
@@ -292,9 +292,9 @@ export function ImportFromFolderModal({ isOpen, onClose, onImport }: Props) {
                     <p className="text-xs text-muted-foreground">
                       These projects don't have GitHub remotes configured
                     </p>
-                    {nonGithubProjects.slice(0, 5).map((project, index) => (
+                    {nonGithubProjects.slice(0, 5).map((project) => (
                       <div
-                        key={`${project.path}-${index}`}
+                        key={project.path}
                         className="p-2 rounded-lg border bg-muted/30 opacity-60"
                       >
                         <div className="flex items-center gap-2">

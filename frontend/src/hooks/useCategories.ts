@@ -34,25 +34,41 @@ export function useCategories() {
 
   useEffect(() => {
     const controller = new AbortController()
-    Promise.all([fetchCategories(controller.signal), fetchOwners(controller.signal)])
+    fetchCategories(controller.signal)
+    fetchOwners(controller.signal)
     return () => controller.abort()
   }, [fetchCategories, fetchOwners])
 
   const createCategory = async (name: string, color?: string) => {
-    const response = await api.createCategory({ name, color })
-    setCategories(prev => [...prev, response.data])
-    return response.data
+    try {
+      const response = await api.createCategory({ name, color })
+      setCategories(prev => [...prev, response.data])
+      return response.data
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create category')
+      throw err
+    }
   }
 
   const updateCategory = async (id: number, data: { name?: string; color?: string }) => {
-    const response = await api.updateCategory(id, data)
-    setCategories(prev => prev.map(c => c.id === id ? response.data : c))
-    return response.data
+    try {
+      const response = await api.updateCategory(id, data)
+      setCategories(prev => prev.map(c => c.id === id ? response.data : c))
+      return response.data
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update category')
+      throw err
+    }
   }
 
   const deleteCategory = async (id: number) => {
-    await api.deleteCategory(id)
-    setCategories(prev => prev.filter(c => c.id !== id))
+    try {
+      await api.deleteCategory(id)
+      setCategories(prev => prev.filter(c => c.id !== id))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete category')
+      throw err
+    }
   }
 
   return {

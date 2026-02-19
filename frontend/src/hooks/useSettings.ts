@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 export interface Settings {
     github_token?: string
@@ -11,20 +11,21 @@ export function useSettings() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
-    const fetchSettings = async () => {
+    const fetchSettings = useCallback(async (signal?: AbortSignal) => {
         try {
             setLoading(true)
-            const response = await fetch('/api/settings')
+            const response = await fetch('/api/settings', { signal })
             if (!response.ok) throw new Error('Failed to fetch settings')
             const data = await response.json()
             setSettings(data)
             setError(null)
         } catch (err) {
+            if (err instanceof Error && err.name === 'AbortError') return
             setError(err instanceof Error ? err.message : 'Unknown error')
         } finally {
             setLoading(false)
         }
-    }
+    }, [])
 
     const updateSettings = async (newSettings: Record<string, string>) => {
         try {
@@ -36,17 +37,20 @@ export function useSettings() {
                 body: JSON.stringify(newSettings),
             })
             if (!response.ok) throw new Error('Failed to update settings')
-            await fetchSettings() // Refresh
+            await fetchSettings()
             return true
         } catch (err) {
+            if (err instanceof Error && err.name === 'AbortError') return false
             setError(err instanceof Error ? err.message : 'Unknown error')
             return false
         }
     }
 
     useEffect(() => {
-        fetchSettings()
-    }, [])
+        const controller = new AbortController()
+        fetchSettings(controller.signal)
+        return () => controller.abort()
+    }, [fetchSettings])
 
     return { settings, loading, error, updateSettings, refresh: fetchSettings }
 }

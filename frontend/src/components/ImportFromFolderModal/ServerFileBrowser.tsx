@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react'
+import { useEffect, useReducer } from 'react'
 import { Folder, ArrowUp, ChevronRight, Loader2, HardDrive } from 'lucide-react'
 import { api } from '@/services/api'
 import type { FileSystemEntry } from '@/types'
@@ -8,45 +8,90 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
 
 interface ServerFileBrowserProps {
-    onSelect: (path: string) => void
-    onCancel: () => void
+    readonly onSelect: (path: string) => void
+    readonly onCancel: () => void
+}
+
+type State = {
+    currentPath: string
+    entries: FileSystemEntry[]
+    parentPath: string | null
+    isLoading: boolean
+    error: string | null
+}
+
+type Action =
+    | { type: 'SET_PATH'; payload: string }
+    | { type: 'LOAD_START' }
+    | { type: 'LOAD_SUCCESS'; payload: { path: string; entries: FileSystemEntry[]; parentPath: string | null } }
+    | { type: 'LOAD_FAILURE'; payload: string }
+
+const initialState: State = {
+    currentPath: '',
+    entries: [],
+    parentPath: null,
+    isLoading: true,
+    error: null
+}
+
+function reducer(state: State, action: Action): State {
+    switch (action.type) {
+        case 'SET_PATH':
+            return { ...state, currentPath: action.payload }
+        case 'LOAD_START':
+            return { ...state, isLoading: true, error: null }
+        case 'LOAD_SUCCESS':
+            return {
+                ...state,
+                isLoading: false,
+                currentPath: action.payload.path,
+                entries: action.payload.entries,
+                parentPath: action.payload.parentPath
+            }
+        case 'LOAD_FAILURE':
+            return { ...state, isLoading: false, error: action.payload }
+        default:
+            return state
+    }
 }
 
 export default function ServerFileBrowser({ onSelect, onCancel }: ServerFileBrowserProps) {
-    const [currentPath, setCurrentPath] = useState<string>('')
-    const [entries, setEntries] = useState<FileSystemEntry[]>([])
-    const [parentPath, setParentPath] = useState<string | null>(null)
-    const [isLoading, setIsLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
+    const [state, dispatch] = useReducer(reducer, initialState)
+    const { currentPath, entries, parentPath, isLoading, error } = state
 
     useEffect(() => {
         loadDirectory(currentPath)
     }, [currentPath])
 
     const loadDirectory = async (path: string) => {
-        setIsLoading(true)
-        setError(null)
+        dispatch({ type: 'LOAD_START' })
         try {
             const res = await api.listDirectories(path)
             if (res.success) {
-                setEntries(res.data.entries)
-                setCurrentPath(res.data.path)
-                setParentPath(res.data.parent)
+                dispatch({
+                    type: 'LOAD_SUCCESS',
+                    payload: {
+                        path: res.data.path,
+                        entries: res.data.entries,
+                        parentPath: res.data.parent
+                    }
+                })
             }
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to list directories')
-        } finally {
-            setIsLoading(false)
+            dispatch({
+                type: 'LOAD_FAILURE',
+                payload: err instanceof Error ? err.message : 'Failed to list directories'
+            })
         }
     }
 
     const handleNavigate = (path: string) => {
-        setCurrentPath(path)
+        dispatch({ type: 'SET_PATH', payload: path })
     }
 
     const handleUp = () => {
         if (parentPath) {
-            setCurrentPath(parentPath)
+            dispatch({ type: 'SET_PATH', payload: parentPath })
         }
     }
 
@@ -54,13 +99,13 @@ export default function ServerFileBrowser({ onSelect, onCancel }: ServerFileBrow
     const renderBreadcrumbs = () => {
         if (!currentPath) return null
         // Normalize path separators for display
-        const parts = currentPath.split(/[/\\]/).filter(p => p)
+        const parts = currentPath.split(/[/\\]/).filter(Boolean)
 
         return (
             <div className="flex items-center text-sm text-muted-foreground overflow-hidden whitespace-nowrap">
                 <HardDrive className="w-4 h-4 mr-1 shrink-0" />
                 {parts.map((part, index) => (
-                    <div key={index} className="flex items-center">
+                    <div key={`${part}-${index}`} className="flex items-center">
                         <ChevronRight className="w-4 h-4 mx-0.5 shrink-0 opacity-50" />
                         <span className={cn(
                             "truncate max-w-[150px]",

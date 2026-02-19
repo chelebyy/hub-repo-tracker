@@ -10,11 +10,9 @@ import {
   StickyNote,
   Package,
   FolderOpen,
-  ScanSearch,
 } from 'lucide-react'
 import type { Repo, Category } from '@/types'
 import { cn } from '@/lib/utils'
-import { api } from '@/services/api'
 import {
   Card,
   CardContent,
@@ -25,31 +23,14 @@ import {
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { PathInput } from '@/components/PathInput'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { Textarea } from '@/components/ui/textarea'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import EditRepoDialog from './EditRepoDialog'
+import ViewNotesDialog from './ViewNotesDialog'
 
 interface Props {
   repo: Repo
@@ -84,16 +65,10 @@ function getVersionInfo(repo: Repo): { type: 'release' | 'tag' | 'commit'; value
   return null
 }
 
-export function RepoCard({ repo, categories, onDelete, onToggleFavorite, onUpdateRepo, onAcknowledge }: Props) {
+export function RepoCard({ repo, categories, onDelete, onToggleFavorite, onUpdateRepo, onAcknowledge }: Readonly<Props>) {
   const [deleting, setDeleting] = useState(false)
   const [editing, setEditing] = useState(false)
   const [acknowledging, setAcknowledging] = useState(false)
-  const [tempNotes, setTempNotes] = useState(repo.notes || '')
-  const [tempCategoryId, setTempCategoryId] = useState<number | null>(repo.category_id || null)
-  const [tempInstalledVersion, setTempInstalledVersion] = useState(repo.installed_version || '')
-  const [tempLocalPath, setTempLocalPath] = useState(repo.local_path || '')
-  const [saving, setSaving] = useState(false)
-  const [detectingVersion, setDetectingVersion] = useState(false)
   const [viewingNotes, setViewingNotes] = useState(false)
 
   const versionInfo = getVersionInfo(repo)
@@ -120,45 +95,6 @@ export function RepoCard({ repo, categories, onDelete, onToggleFavorite, onUpdat
       await onAcknowledge(repo.id, versionInfo.value)
     } finally {
       setAcknowledging(false)
-    }
-  }
-
-  const openEdit = () => {
-    setTempNotes(repo.notes || '')
-    setTempCategoryId(repo.category_id || null)
-    setTempInstalledVersion(repo.installed_version || '')
-    setTempLocalPath(repo.local_path || '')
-    setEditing(true)
-  }
-
-  const handleDetectVersion = async () => {
-    if (!tempLocalPath.trim()) return
-
-    setDetectingVersion(true)
-    try {
-      const response = await api.detectVersion(tempLocalPath.trim())
-      if (response.data.version) {
-        setTempInstalledVersion(response.data.version)
-      }
-    } catch (err) {
-      console.error('Failed to detect version:', err)
-    } finally {
-      setDetectingVersion(false)
-    }
-  }
-
-  const handleSave = async () => {
-    setSaving(true)
-    try {
-      await onUpdateRepo(repo.id, {
-        notes: tempNotes,
-        category_id: tempCategoryId,
-        installed_version: tempInstalledVersion || null,
-        local_path: tempLocalPath.trim() || null,
-      })
-      setEditing(false)
-    } finally {
-      setSaving(false)
     }
   }
 
@@ -213,7 +149,7 @@ export function RepoCard({ repo, categories, onDelete, onToggleFavorite, onUpdat
           </div>
         </CardHeader>
 
-        <CardContent className="p-4 py-2 flex-1">
+        <CardContent className="p-4 py-2 flex-1 flex flex-col">
           {repo.description && (
             <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed opacity-90 min-h-[2.4em] mb-4">
               {repo.description}
@@ -293,7 +229,7 @@ export function RepoCard({ repo, categories, onDelete, onToggleFavorite, onUpdat
               {repo.sync_state?.has_updates && !hasNotification && (
                 <span className="flex items-center gap-1 text-green-600 dark:text-green-500 font-bold uppercase tracking-tighter text-[10px]">
                   <span className="w-1.5 h-1.5 bg-current rounded-full" />
-                  Update
+                  <span>Update</span>
                 </span>
               )}
             </div>
@@ -303,24 +239,25 @@ export function RepoCard({ repo, categories, onDelete, onToggleFavorite, onUpdat
             </div>
           </div>
 
-          {/* Repo Notes - displayed on card */}
           {repo.notes && (
-            <div
-              className="mt-3 bg-muted/40 p-2 rounded-md border border-border/40 hover:bg-muted/60 transition-colors cursor-pointer group/notes-area relative"
+            <button
+              className="mt-2 bg-muted/30 p-1.5 rounded-md border border-border/30 hover:bg-muted/50 transition-colors cursor-pointer group/notes-area relative flex flex-col gap-0.5 w-full text-left"
               onClick={() => setViewingNotes(true)}
-              title="Click to view full notes"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  setViewingNotes(true)
+                }
+              }}
+              title="View full notes"
             >
-              <div className="flex items-center gap-1.5 mb-1 text-muted-foreground/80 font-medium text-[10px] uppercase tracking-wider">
-                <StickyNote className="w-3 h-3" />
+              <div className="flex items-center gap-1.5 text-muted-foreground/70 font-medium text-[9px] uppercase tracking-wider mb-0.5">
+                <StickyNote className="w-2.5 h-2.5" />
                 <span>Notes</span>
-                <span className="ml-auto text-[9px] opacity-0 group-hover/notes-area:opacity-100 transition-opacity">
-                  View Full
-                </span>
               </div>
-              <p className="text-xs text-muted-foreground whitespace-pre-wrap line-clamp-3 leading-relaxed">
+              <p className="text-[11px] text-muted-foreground whitespace-pre-wrap line-clamp-2 leading-tight">
                 {repo.notes}
               </p>
-            </div>
+            </button>
           )}
         </CardContent>
 
@@ -363,7 +300,7 @@ export function RepoCard({ repo, categories, onDelete, onToggleFavorite, onUpdat
                 variant="ghost"
                 size="icon"
                 className="h-6 w-6 text-muted-foreground hover:text-accent"
-                onClick={openEdit}
+                onClick={() => setEditing(true)}
                 title="Edit Repo"
               >
                 <Pencil className="w-3 h-3" />
@@ -383,122 +320,22 @@ export function RepoCard({ repo, categories, onDelete, onToggleFavorite, onUpdat
         </CardFooter>
       </Card>
 
-      <Dialog open={editing} onOpenChange={setEditing}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Edit Repository</DialogTitle>
-            <DialogDescription className="truncate">
-              {repo.full_name}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
-              <Select
-                value={tempCategoryId?.toString() || "null"}
-                onValueChange={(val) => setTempCategoryId(val === "null" ? null : Number(val))}
-              >
-                <SelectTrigger id="category">
-                  <SelectValue placeholder="Select a category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="null">No Category</SelectItem>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id.toString()}>
-                      {cat.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea
-                id="notes"
-                value={tempNotes}
-                onChange={(e) => setTempNotes(e.target.value)}
-                placeholder="Add notes about this repository..."
-                className="h-32"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="installed-version">Installed Version</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="installed-version"
-                  value={tempInstalledVersion}
-                  onChange={(e) => setTempInstalledVersion(e.target.value)}
-                  placeholder="e.g., 1.2.3"
-                  className="flex-1"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={handleDetectVersion}
-                  disabled={detectingVersion || !tempLocalPath.trim()}
-                  title="Auto-detect from local path"
-                >
-                  <ScanSearch className={cn("w-4 h-4", detectingVersion && "animate-pulse")} />
-                </Button>
-              </div>
-              <p className="text-[10px] text-muted-foreground">
-                Track which version you have installed locally. Click the scan button to auto-detect from local path.
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="local-path">Local Path</Label>
-              <PathInput
-                value={tempLocalPath}
-                onChange={setTempLocalPath}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditing(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? 'Saving...' : 'Save Changes'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {editing && (
+        <EditRepoDialog
+          repo={repo}
+          categories={categories}
+          onClose={() => setEditing(false)}
+          onSave={onUpdateRepo}
+        />
+      )}
 
-      <Dialog open={viewingNotes} onOpenChange={setViewingNotes}>
-        <DialogContent className="sm:max-w-[600px] max-h-[85vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-lg">
-              <StickyNote className="w-5 h-5 text-primary" />
-              Notes for {repo.name}
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="flex-1 overflow-y-auto pr-2 mt-2">
-            <div className="text-sm leading-relaxed whitespace-pre-wrap bg-muted/30 p-4 rounded-lg border border-border/50">
-              {repo.notes}
-            </div>
-          </div>
-
-          <DialogFooter className="mt-4 sm:justify-between">
-            <div className="text-xs text-muted-foreground self-center">
-              {repo.notes?.length || 0} characters
-            </div>
-            <div className="flex gap-2">
-              <Button variant="secondary" onClick={() => {
-                setViewingNotes(false)
-                openEdit()
-              }}>
-                <Pencil className="w-3 h-3 mr-2" />
-                Edit Notes
-              </Button>
-              <Button onClick={() => setViewingNotes(false)}>
-                Close
-              </Button>
-            </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {viewingNotes && (
+        <ViewNotesDialog
+          repo={repo}
+          onClose={() => setViewingNotes(false)}
+          onEditNotes={() => setEditing(true)}
+        />
+      )}
     </>
   )
 }
