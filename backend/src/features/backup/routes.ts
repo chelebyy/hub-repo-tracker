@@ -2,15 +2,41 @@ import { FastifyInstance } from 'fastify';
 import { backupService } from './service.js';
 import { backupSchemas } from './schema.js';
 import { createError } from '../../shared/middleware/error.js';
-import { readFile, writeFile, unlink } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import Database from 'better-sqlite3';
 import type { BackupData } from './types.js';
 import { backupRepository } from './repository.js';
 
 export async function backupRoutes(app: FastifyInstance): Promise<void> {
+  const createTempDbPath = async (prefix: string): Promise<string> => {
+    const tempDir = await mkdtemp(join(tmpdir(), `${prefix}-`));
+    return join(tempDir, 'upload.db');
+  };
+
+  const withUploadedSqliteDb = async <T>(
+    prefix: string,
+    buffer: Buffer,
+    operation: (tempDb: Database.Database) => T,
+  ): Promise<T> => {
+    const tempDbPath = await createTempDbPath(prefix);
+    let tempDb: Database.Database | null = null;
+
+    try {
+      await writeFile(tempDbPath, buffer);
+      tempDb = new Database(tempDbPath, { readonly: true, fileMustExist: true });
+      return operation(tempDb);
+    } finally {
+      try {
+        tempDb?.close();
+      } finally {
+        await rm(dirname(tempDbPath), { recursive: true, force: true });
+      }
+    }
+  };
+
   // GET /api/backup/export/json - Export all data as JSON
   app.get('/api/backup/export/json', {
     schema: {
@@ -111,20 +137,16 @@ export async function backupRoutes(app: FastifyInstance): Promise<void> {
           exported_at: json.exported_at,
         };
       } else if (filename.endsWith('.db') || filename.endsWith('.sqlite') || filename.endsWith('.sqlite3')) {
-        const tempDbPath = join(tmpdir(), `preview-${Date.now()}.db`);
-        await writeFile(tempDbPath, buffer);
+        preview = await withUploadedSqliteDb('preview', buffer, (tempDb) => {
+          const repos = tempDb.prepare('SELECT COUNT(*) as count FROM repos').get() as { count: number };
+          const categories = tempDb.prepare('SELECT COUNT(*) as count FROM categories').get() as { count: number };
 
-        const tempDb = new Database(tempDbPath);
-        const repos = tempDb.prepare('SELECT COUNT(*) as count FROM repos').get() as { count: number };
-        const categories = tempDb.prepare('SELECT COUNT(*) as count FROM categories').get() as { count: number };
-        tempDb.close();
-        await unlink(tempDbPath);
-
-        preview = {
-          total_repos: repos.count,
-          total_categories: categories.count,
-          exported_at: new Date().toISOString(),
-        };
+          return {
+            total_repos: repos.count,
+            total_categories: categories.count,
+            exported_at: new Date().toISOString(),
+          };
+        });
       } else {
         throw createError(400, 'UNSUPPORTED_FORMAT', 'Unsupported file format. Use .json or .db');
       }
@@ -164,16 +186,12 @@ export async function backupRoutes(app: FastifyInstance): Promise<void> {
         const result = backupService.restoreFromJson(json, { mode });
         return result;
       } else if (filename.endsWith('.db') || filename.endsWith('.sqlite') || filename.endsWith('.sqlite3')) {
-        const tempDbPath = join(tmpdir(), `restore-${Date.now()}.db`);
-        await writeFile(tempDbPath, buffer);
-
-        const tempDb = new Database(tempDbPath);
-        const repos = tempDb.prepare('SELECT * FROM repos').all() as Array<Record<string, unknown>>;
-        const categories = tempDb.prepare('SELECT * FROM categories').all() as Array<Record<string, unknown>>;
-        const syncStates = tempDb.prepare('SELECT * FROM sync_state').all() as Array<Record<string, unknown>>;
-        const versionHistory = tempDb.prepare('SELECT * FROM version_history').all() as Array<Record<string, unknown>>;
-        tempDb.close();
-        await unlink(tempDbPath);
+        const { repos, categories, syncStates, versionHistory } = await withUploadedSqliteDb('import', buffer, (tempDb) => ({
+          repos: tempDb.prepare('SELECT * FROM repos').all() as Array<Record<string, unknown>>,
+          categories: tempDb.prepare('SELECT * FROM categories').all() as Array<Record<string, unknown>>,
+          syncStates: tempDb.prepare('SELECT * FROM sync_state').all() as Array<Record<string, unknown>>,
+          versionHistory: tempDb.prepare('SELECT * FROM version_history').all() as Array<Record<string, unknown>>,
+        }));
 
         const backupData: BackupData = {
           version: '1.0',
@@ -268,25 +286,13 @@ export async function backupRoutes(app: FastifyInstance): Promise<void> {
 
       // For SQLite restore, we need to be very careful
       // We'll import the data from the uploaded SQLite into current database
-      const tempDbPath = join(tmpdir(), `restore-${Date.now()}.db`);
-
-      // Write uploaded file to temp location
       const buffer = await data.toBuffer();
-      await writeFile(tempDbPath, buffer);
-
-      // Open temp database and read data
-      const tempDb = new Database(tempDbPath);
-
-      // Get data from temp database
-      const repos = tempDb.prepare('SELECT * FROM repos').all() as Array<Record<string, unknown>>;
-      const categories = tempDb.prepare('SELECT * FROM categories').all() as Array<Record<string, unknown>>;
-      const syncStates = tempDb.prepare('SELECT * FROM sync_state').all() as Array<Record<string, unknown>>;
-      const versionHistory = tempDb.prepare('SELECT * FROM version_history').all() as Array<Record<string, unknown>>;
-
-      tempDb.close();
-
-      // Clean up temp file
-      await unlink(tempDbPath);
+      const { repos, categories, syncStates, versionHistory } = await withUploadedSqliteDb('restore', buffer, (tempDb) => ({
+        repos: tempDb.prepare('SELECT * FROM repos').all() as Array<Record<string, unknown>>,
+        categories: tempDb.prepare('SELECT * FROM categories').all() as Array<Record<string, unknown>>,
+        syncStates: tempDb.prepare('SELECT * FROM sync_state').all() as Array<Record<string, unknown>>,
+        versionHistory: tempDb.prepare('SELECT * FROM version_history').all() as Array<Record<string, unknown>>,
+      }));
 
       // Build backup data structure with proper typing
       const backupData: BackupData = {
